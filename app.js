@@ -171,6 +171,19 @@ function setupParentAuthentication() {
     }
   });
 }
+function setupLogoutButton() {
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (!logoutBtn) return;
+
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await auth.signOut();
+    } catch (error) {
+      alert("Logout failed: " + error.message);
+    }
+  });
+}
 function loadState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {students:[],records:[]}}catch{return {students:[],records:[]}}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
