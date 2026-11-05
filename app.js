@@ -1,3 +1,18 @@
+// Firebase initialization
+const firebaseConfig = {
+  apiKey: "AIzaSyCwPSPbm8JYKytkBahPLtKzhNw1MSdxDv4",
+  authDomain: "attendly-smart-attendance.firebaseapp.com",
+  projectId: "attendly-smart-attendance",
+  storageBucket: "attendly-smart-attendance.firebasestorage.app",
+  messagingSenderId: "614135703435",
+  appId: "1:614135703435:web:c92bcf839abbcdcb94318e",
+  measurementId: "G-G3XGLVENS"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
 /* AttendSmart - science exhibition demo.
    Face recognition is client-side and stores face descriptors in localStorage.
    Camera access requires localhost or HTTPS. */
@@ -15,6 +30,147 @@ let toastTimer;
 const $ = (id) => document.getElementById(id);
 const today = () => new Date().toLocaleDateString("en-CA");
 const timeNow = () => new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+// Parent authentication
+function setAuthMode(mode) {
+  const registering = mode === "register";
+
+  $("parentRegisterForm").classList.toggle("hidden", !registering);
+  $("parentLoginForm").classList.toggle("hidden", registering);
+
+  $("authTitle").textContent = registering
+    ? "Parent Registration"
+    : "Parent Login";
+
+  $("authDescription").textContent = registering
+    ? "Create your parent account to continue."
+    : "Log in to access AttendSmart.";
+
+  $("authSwitchText").textContent = registering
+    ? "Already registered?"
+    : "New parent?";
+
+  $("authSwitchBtn").textContent = registering
+    ? "Log in"
+    : "Create account";
+
+  $("authMessage").textContent = "";
+}
+
+function showAuthScreen() {
+  $("parentAuth").classList.remove("hidden");
+  document.querySelector(".app-shell").classList.add("hidden");
+  $("authMessage").textContent = "";
+}
+
+function showDashboard() {
+  $("parentAuth").classList.add("hidden");
+  document.querySelector(".app-shell").classList.remove("hidden");
+}
+
+function authErrorMessage(error) {
+  const messages = {
+    "auth/email-already-in-use": "This email is already registered. Please log in.",
+    "auth/invalid-email": "Please enter a valid email address.",
+    "auth/weak-password": "Please use a stronger password with at least 6 characters.",
+    "auth/user-not-found": "No account found with this email.",
+    "auth/wrong-password": "Incorrect email or password.",
+    "auth/invalid-credential": "Incorrect email or password.",
+    "auth/too-many-requests": "Too many attempts. Please try again later."
+  };
+
+  return messages[error.code] || "Something went wrong. Please try again.";
+}
+
+async function registerParent(event) {
+  event.preventDefault();
+
+  const name = $("parentName").value.trim();
+  const email = $("registerEmail").value.trim();
+  const password = $("registerPassword").value;
+
+  if (!name) {
+    $("authMessage").textContent = "Please enter your full name.";
+    return;
+  }
+
+  $("authMessage").textContent = "Creating your account...";
+
+  try {
+    const result = await auth.createUserWithEmailAndPassword(
+      email,
+      password
+    );
+
+    await db.collection("users").doc(result.user.uid).set({
+      displayName: name,
+      email: result.user.email,
+      role: "parent",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    $("authMessage").textContent = "Account created successfully!";
+    $("parentRegisterForm").reset();
+
+  } catch (error) {
+    console.error(error);
+    $("authMessage").textContent = authErrorMessage(error);
+  }
+}
+
+async function loginParent(event) {
+  event.preventDefault();
+
+  const email = $("loginEmail").value.trim();
+  const password = $("loginPassword").value;
+
+  $("authMessage").textContent = "Logging in...";
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    $("parentLoginForm").reset();
+
+  } catch (error) {
+    console.error(error);
+    $("authMessage").textContent = authErrorMessage(error);
+  }
+}
+
+function setupParentAuthentication() {
+  setAuthMode("register");
+
+  $("authSwitchBtn").addEventListener("click", () => {
+    const registering = !$("parentRegisterForm").classList.contains("hidden");
+    setAuthMode(registering ? "login" : "register");
+  });
+
+  $("parentRegisterForm").addEventListener("submit", registerParent);
+  $("parentLoginForm").addEventListener("submit", loginParent);
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      showAuthScreen();
+      return;
+    }
+
+    try {
+      const profile = await db.collection("users").doc(user.uid).get();
+
+      if (!profile.exists || profile.data().role !== "parent") {
+        await auth.signOut();
+        $("authMessage").textContent =
+          "Parent profile not found. Please register again.";
+        return;
+      }
+
+      showDashboard();
+    } catch (error) {
+      console.error(error);
+      $("authMessage").textContent =
+        "Unable to verify your account. Please try again.";
+      await auth.signOut();
+    }
+  });
+}
 function loadState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {students:[],records:[]}}catch{return {students:[],records:[]}}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));renderAll()}
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
