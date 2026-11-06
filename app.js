@@ -24,6 +24,7 @@ let qrScanner = null;
 let faceStream = null;
 let faceLoop = null;
 let pendingStudent = null;
+let selectedEnrollmentStudent = null;
 let modelsReady = false;
 let toastTimer;
 
