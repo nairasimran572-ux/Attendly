@@ -133,6 +133,16 @@
             </div>
             <div class="camera-box"><div id="qrReader" class="qr-reader"></div><video id="faceVideo" autoplay muted playsinline></video><div id="cameraPlaceholder" class="camera-placeholder"><div class="camera-icon">▣</div><strong>Camera is not active</strong><span>Start the scanner to begin attendance.</span></div></div>
             <div class="camera-actions"><button class="btn btn-primary" id="startCameraBtn">Start camera</button><button class="btn btn-secondary" id="stopCameraBtn" disabled>Stop camera</button></div>
+            <div id="faceEnrollmentPanel" class="verify-box hidden">
+  <div>
+    <span class="eyebrow">FACE ENROLLMENT</span>
+    <strong id="enrollmentStudentName">No student selected</strong>
+    <small id="enrollmentStatus">Select a student from the Students page.</small>
+  </div>
+  <button class="btn btn-primary" type="button" id="captureFaceBtn" disabled>
+    Capture &amp; Save Face
+  </button>
+</div>
             <div id="scanStatus" class="status-message">Select a mode and start the camera.</div>
             <div id="pendingVerify" class="verify-box hidden"><div><span class="eyebrow">QR MATCH FOUND</span><strong id="pendingStudentName">Student</strong><small id="pendingStudentId">ID</small></div><button class="btn btn-primary" id="verifyFaceBtn">Verify face</button></div>
           </div>
